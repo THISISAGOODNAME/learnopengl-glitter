@@ -35,7 +35,7 @@ public:
 
 	/*  成员函数  */
 	// Constructor
-	Mesh(vector<Vertex> vertices, vector<GLuint> indices, vector<Texture> texture)
+	Mesh(vector<Vertex> vertices, vector<GLuint> indices, vector<Texture> textures)
 	{
 		this->vertices = vertices;
 		this->indices = indices;
