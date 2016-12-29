@@ -30,7 +30,8 @@ void RenderCube();
 void RenderQuad();
 
 // 相机
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+//Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 0.0f));
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
@@ -88,6 +89,7 @@ int main(int argc, char * argv[]) {
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
+//    glViewport(0, 0, mWidth, mHeight);
 
     // 设置OpenGL可选项
     glEnable(GL_DEPTH_TEST); // 开启深度测试
@@ -95,7 +97,6 @@ int main(int argc, char * argv[]) {
 
     // 编译着色器程序
     Shader shader("point_shadows.vert", "point_shadows.frag");
-//    Shader shader("point_shadows.vert", "frag2.frag");
     Shader simpleDepthShader("point_shadows_depth.vert", "point_shadows_depth.frag", "point_shadows_depth.geom");
 
 #pragma region "object_initialization"
@@ -157,13 +158,13 @@ int main(int argc, char * argv[]) {
 //        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Move light position over time
-        lightPos.z = sin(glfwGetTime() * 0.5) * 3.0;
+//        lightPos.z = sin(glfwGetTime() * 0.5) * 3.0;
 
         // 0. Create depth cubemap transformation matrices
         GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
-        GLfloat near = 1.0f;
-        GLfloat far = 25.0f;
-        glm::mat4 shadowProj = glm::perspective(90.0f, aspect, near, far);
+        GLfloat near_plane = 1.0f;
+        GLfloat far_plane = 25.0f;
+        glm::mat4 shadowProj = glm::perspective(90.0f, aspect, near_plane, far_plane);
         std::vector<glm::mat4> shadowTransforms;
         shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 1.0,  0.0,  0.0), glm::vec3(0.0, -1.0,  0.0)));
         shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0,  0.0,  0.0), glm::vec3(0.0, -1.0,  0.0)));
@@ -178,14 +179,15 @@ int main(int argc, char * argv[]) {
         glClear(GL_DEPTH_BUFFER_BIT);
         simpleDepthShader.Use();
         for (GLuint i = 0; i < 6; ++i)
-            glUniformMatrix4fv(glGetUniformLocation(simpleDepthShader.Program, ("shadowMatrices[" + std::to_string(i) + "]").c_str()), 1, GL_FALSE, glm::value_ptr(shadowTransforms[i]));
-        glUniform1f(glGetUniformLocation(simpleDepthShader.Program, "far_plane"), far);
+            glUniformMatrix4fv(glGetUniformLocation(simpleDepthShader.Program, ("shadowTransforms[" + std::to_string(i) + "]").c_str()), 1, GL_FALSE, glm::value_ptr(shadowTransforms[i]));
+        glUniform1f(glGetUniformLocation(simpleDepthShader.Program, "far_plane"), far_plane);
         glUniform3fv(glGetUniformLocation(simpleDepthShader.Program, "lightPos"), 1, &lightPos[0]);
         RenderScene(simpleDepthShader);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // 2. Render scene as normal
         glViewport(0, 0, width, height);
+//        glViewport(0, 0, mWidth, mHeight);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         shader.Use();
         glm::mat4 projection = glm::perspective(camera.Zoom, (float)mWidth / (float)mHeight, 0.1f, 100.0f);
@@ -201,7 +203,7 @@ int main(int argc, char * argv[]) {
         else
             std::cout << MAGENTA << "shadows state:" << "false" << RESET << std::endl;
         glUniform1i(glGetUniformLocation(shader.Program, "shadows"), shadows);
-        glUniform1f(glGetUniformLocation(shader.Program, "far_plane"), far);
+        glUniform1f(glGetUniformLocation(shader.Program, "far_plane"), far_plane);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, woodTexture);
         glActiveTexture(GL_TEXTURE1);
